@@ -1,0 +1,17 @@
+[package]
+name = "rust-kernel"
+version = "0.1.0"
+edition = "2018"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[dependencies]
+bootloader = "0.9.4"
+
+[[bin]]
+name = "kernel"
+path = "main.rs"
