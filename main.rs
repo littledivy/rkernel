@@ -5,20 +5,20 @@
 use core::panic::PanicInfo;
 
 mod asm;
+mod graphics;
 mod keyboard;
-mod vga;
 
 use asm::*;
+use graphics::Screen;
 use keyboard::scancode_to_ascii;
-use vga::Screen;
 
-static WELCOME: &[u8] = b"welcome to rkernel.";
+static WELCOME: &[u8] = b"welcome to rkernel!";
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     let mut screen = Screen::new();
-    screen.write(WELCOME);
 
+    screen.write(WELCOME);
     loop {
         unsafe {
             // Keyboard things

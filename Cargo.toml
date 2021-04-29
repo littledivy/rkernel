@@ -11,6 +11,7 @@ panic = "abort"
 
 [dependencies]
 bootloader = "0.9.4"
+vga = "0.2.6"
 
 [[bin]]
 name = "kernel"
