@@ -22,15 +22,15 @@ impl Screen {
         self.x += 8;
         if self.x > 320 {
             self.x = 1;
-            self.y += 8;
+            self.y += 10;
         }
     }
 
     fn dec(&mut self) {
         if self.x < 8 {
             self.x = 320;
-            if self.y > 7 {
-                self.y -= 8;
+            if self.y > 10 {
+                self.y -= 10;
             }
         } else {
             self.x -= 8;
@@ -44,8 +44,8 @@ impl Screen {
     }
 
     pub fn write_byte(&mut self, ch: u8) {
-        self.inc();
         self.mode.draw_character(self.x, self.y, ch as char, 255);
+        self.inc();
     }
 
     pub fn pop(&mut self) {

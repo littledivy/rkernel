@@ -19,7 +19,8 @@ static WELCOME: &[u8] = b"welcome to rkernel";
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     let mut screen = Screen::new();
-    let mut is_mouse = false;
+    // Maybe we could add mouse functionality in future by a user toggle.
+    // let mut is_mouse = false;
     screen.write(WELCOME);
     loop {
         unsafe {
@@ -33,27 +34,12 @@ pub extern "C" fn _start() -> ! {
             }
             // Get input from data port
             let c = read_from_port(0x60);
-            // Toggle mouse
-            if c == 0x1d {
-                is_mouse = if is_mouse {
-                    disable_mouse();
-                    false
-                } else {
-                    true
-                };
-                init_mouse();
-                continue;
-            }
 
-            if is_mouse {
-                screen.write_byte(c as u8);
-            } else {
-                // Backspace
-                if c == 0x0E {
-                    screen.pop();
-                } else if let Some(ch) = scancode_to_ascii(c) {
-                    screen.write_byte(ch);
-                }
+            // Backspace
+            if c == 0x0E {
+                screen.pop();
+            } else if let Some(ch) = scancode_to_ascii(c) {
+                screen.write_byte(ch);
             }
         }
     }
