@@ -15,7 +15,6 @@ impl Screen {
         let mode = Graphics320x240x256::new();
         mode.set_mode();
         mode.clear_screen(0);
-        mode.draw_line((60, 20), (260, 20), 255);
         Self { mode, x: 0, y: 1 }
     }
 

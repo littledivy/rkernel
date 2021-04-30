@@ -10,9 +10,8 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-bootloader = "0.9.4"
 vga = "0.2.6"
 
-[[bin]]
-name = "kernel"
+[lib]
+crate-type = ["staticlib"]
 path = "main.rs"
