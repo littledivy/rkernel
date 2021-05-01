@@ -1,3 +1,6 @@
+/// This module provides I/O Port communication with some inline assembly *magic*.
+/// Needs `#![feature(asm)]` (nightly rustc)
+
 #[inline]
 pub unsafe fn read_from_port(port: u16) -> u8 {
     let value: u8;

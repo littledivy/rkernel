@@ -1,6 +1,6 @@
 TARGET=.cargo/x86_64-kernel.json
 BOOT_SOURCE=(multiboot_header long_mode_start boot)
-
+set -e
 cargo build --target $TARGET
 
 BOOT_OUT=()
@@ -16,7 +16,7 @@ ld -n --gc-sections -T linker.ld -o kernel.bin boot/boot.o boot/multiboot_header
 # rm -rf build/
 # mkdir -p build/boot/grub
 mv kernel.bin build/boot/kernel.bin
-cp boot/grub.cfg boot/boot/grub/grub.cfg
+# cp boot/grub.cfg boot/boot/grub/grub.cfg
 grub-mkrescue -o x86_64-rkernel.iso build/
 
-
+qemu-system-x86_64 -cdrom x86_64-rkernel.iso
