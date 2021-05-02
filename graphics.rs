@@ -1,18 +1,12 @@
 /// `rkernel::graphics::Screen` provides the high level API to draw on the 640x480 screen with 16 layers.
 use vga::colors::Color16;
-use vga::registers::PlaneMask;
+use vga::colors::TextModeColor;
 use vga::vga::VGA;
-use vga::writers::Graphics320x240x256;
-use vga::writers::GraphicsWriter;
+use vga::writers::{ScreenCharacter, Text80x25, TextWriter};
 
 trait Writer {
     fn inc(&mut self) {}
     fn dec(&mut self) {}
-
-    // TODO(littledivy): Writers should actually implement their own writing mechanism.
-    // Maybe pass VGA mode as mutable?
-    // fn write(&mut self, buf: &[u8]) {}
-    fn reset(&mut self) {}
 }
 
 struct CommandWriter {
@@ -23,142 +17,138 @@ struct CommandWriter {
     pub y: usize,
 }
 
-static CommandY: usize = 230 - 10;
+static CommandY: usize = 25 - 1;
 
 impl CommandWriter {
-  fn init() -> Self {
-        Self { x: 0, y: CommandY }
-  }
+    fn init() -> Self {
+        Self { x: 1, y: CommandY }
+    }
 }
 
 impl Writer for CommandWriter {
     fn inc(&mut self) {
-        self.x += 8;
-        if self.x > 310 {
-            self.x = 12;
+        self.x += 1;
+        if self.x > 80 {
+            self.x = 1;
         }
     }
 
     fn dec(&mut self) {
-        if self.x < 8 {
-            self.x = 12;
+        if self.x <= 1 {
+            self.x = 1;
         } else {
-            self.x -= 8;
+            self.x -= 1;
         }
-    }
-    
-    fn reset(&mut self) {
-      self.y = CommandY;
-      self.x = 0;
     }
 }
 
 struct StageWriter {
-  x: usize,
-  y: usize,
+    pub x: usize,
+    pub y: usize,
 }
 
 impl StageWriter {
-  pub fn init() -> Self {
-    Self { x: 0, y: 18 }
-  }
+    pub fn init() -> Self {
+        Self { x: 0, y: 0 }
+    }
 }
 
 impl Writer for StageWriter {
-  fn inc(&mut self) {
-    self.x += 8;
-    if self.x > 310 {
-       self.x = 12;
-       self.y += 8;
+    fn inc(&mut self) {
+        self.x += 1;
+        if self.x > 80 {
+            self.x = 0;
+            self.y += 1;
+        }
     }
-  }
-  
-  fn dec(&mut self) {
-    if self.x < 8 {
-       self.x = 12;
-       if self.y < 8 {
-         self.y = 18;
-       } else {
-         self.y -= 8;
-       }
-    } else {
-       self.x -= 8;
+
+    fn dec(&mut self) {
+        if self.x < 0 {
+            self.x = 0;
+            if self.y < 1 {
+                self.y = 1;
+            } else {
+                self.y -= 1;
+            }
+        } else {
+            self.x -= 1;
+        }
     }
-  }
-  
-  fn reset(&mut self) {
-    self.y = 18;
-    self.x = 0;
-  }
 }
 
-/// Uh, so this is the screen. Not literally 
+/// Uh, so this is the screen. Not literally
 pub struct Screen {
-    pub mode: Graphics320x240x256,
-    pub cmd: CommandWriter,
+    pub mode: Text80x25,
+    cmd: CommandWriter,
+    pub curr_command: [u8; 310],
     stage: StageWriter,
 }
 
 impl Screen {
     /// Creates a new screen on top of the 640x480x16 VGA Graphics writer.
-    /// - FIles
     pub fn new() -> Self {
-        let mode = Graphics320x240x256::new();
+        let mode = Text80x25::new();
         mode.set_mode();
-        mode.clear_screen(0);
-        // Draws the stage and command input boundaries.
-        // Note: Boundaries should be respected on later parts of code.
-        mode.draw_line((10, 10), (310, 10), 255);
-        mode.draw_line((10, 10), (10, 230), 255);
-        mode.draw_line((10, 230), (310, 230), 255);
-        mode.draw_line((310, 230), (310, 10), 255);
-        mode.draw_line((10, 230 - 12), (310, 230 - 12), 255);
+        mode.clear_screen();
+        let color = TextModeColor::new(Color16::White, Color16::Black);
+        let marker = ScreenCharacter::new(b'_', color);
+        for i in 0..80 {
+            mode.write_character(i, 25 - 2, marker);
+        }
+        mode.write_character(0, 25 - 1, ScreenCharacter::new(b'>', color));
         Self {
             mode,
             cmd: CommandWriter::init(),
             stage: StageWriter::init(),
+            curr_command: [0u8; 310],
         }
     }
 
     /// Writes to the stage.
-    pub fn write(&mut self, buf: &[u8]) {
+    pub fn write(&mut self, buf: &[u8], fg: Color16) {
         for (offset, ch) in buf.iter().enumerate() {
-            // self.write_byte(*ch);
-            self.mode.draw_character(self.stage.x + 10 + 2, self.stage.y, *ch as char, 255);
-            self.stage.inc();
+            if ch == &0u8 {
+                continue;
+            };
+            if ch == &b'\n' {
+                self.stage.x = 0;
+                self.stage.y += 1;
+            } else {
+                let color = TextModeColor::new(fg, Color16::Black);
+                let screen_character = ScreenCharacter::new(*ch, color);
+                self.mode
+                    .write_character(self.stage.x, self.stage.y, screen_character);
+                self.stage.inc();
+            }
         }
     }
 
     /// Writes to the command input.
     pub fn write_byte(&mut self, ch: u8) {
+        let color = TextModeColor::new(Color16::Yellow, Color16::Black);
+        let screen_character = ScreenCharacter::new(ch, color);
+        self.mode.set_cursor_position(self.cmd.x, self.cmd.y);
         self.mode
-            .draw_character(self.cmd.x + 10 + 2, self.cmd.y, ch as char, 255);
+            .write_character(self.cmd.x, self.cmd.y, screen_character);
+        self.curr_command[self.cmd.x] = ch;
         self.cmd.inc();
     }
-  
-    /// Resets the stage.
-    pub fn clear_stage(&mut self) {
-        
-        self.stage.reset();
+
+    /// Resets the command.
+    pub fn clear_command(&mut self) {
+        while self.cmd.x != 1 {
+            self.pop();
+        }
+        self.pop();
+        self.curr_command = [0u8; 310];
     }
-    
+
     /// Resets the previous 8x8 character from R to L of the command input.
     pub fn pop(&mut self) {
-        let frame_buffer = self.mode.get_frame_buffer();
-
-        VGA.lock()
-            .sequencer_registers
-            .set_plane_mask(PlaneMask::ALL_PLANES);
-
-        for i in 0..8 {
-            for bit in 0..8 {
-                let offset = (320 * (self.cmd.y + i) + (self.cmd.x + 10 + 2 + bit)) / 4;
-                unsafe {
-                    frame_buffer.add(offset).write_volatile(0);
-                }
-            }
-        }
-
+        let color = TextModeColor::new(Color16::Black, Color16::Black);
+        let blch = ScreenCharacter::new(b' ', color);
+        self.mode.write_character(self.cmd.x, self.cmd.y, blch);
         self.cmd.dec();
+        self.mode.set_cursor_position(self.cmd.x, self.cmd.y);
     }
 }
