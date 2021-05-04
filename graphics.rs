@@ -1,3 +1,4 @@
+use core::fmt;
 /// `rkernel::graphics::Screen` provides the high level API to draw on the 640x480 screen with 16 layers.
 use vga::colors::Color16;
 use vga::colors::TextModeColor;

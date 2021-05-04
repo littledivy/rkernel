@@ -51,6 +51,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "multiboot2"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13e9fc890ff2ef2ded9084c964b950da1bc9e26d480e446ae721607b899db1fd"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -63,6 +72,7 @@ dependencies = [
 name = "rust-kernel"
 version = "0.1.0"
 dependencies = [
+ "multiboot2",
  "ryu",
  "vga",
 ]
