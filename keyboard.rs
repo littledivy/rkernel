@@ -1,3 +1,8 @@
+use crate::asm::*;
+use crate::idt::PICS;
+use crate::SCREEN;
+use x86_64::structures::idt::InterruptStackFrame;
+
 pub enum Input {
     /// A genuine character key.
     Key(u8),
@@ -17,5 +22,36 @@ pub fn scancode_to_input(scancode: u8) -> Option<Input> {
         // TODO(littledivy): Make this unique in keyboard::Input ?
         0x39 => Some(Input::Key(b' ')),
         _ => None,
+    }
+}
+
+pub extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
+    unsafe {
+        // Get status from command port
+        //  let status = read_from_port(0x64);
+
+        // Data port is busy?
+        //  if status & 0x1 != 0 {
+        // Get input from data port
+        let c = read_from_port(0x60);
+
+        // Backspace
+        if c == 0x0E {
+            SCREEN.lock().pop();
+        } else if let Some(input) = scancode_to_input(c) {
+            match input {
+                // Execute command
+                Input::Enter => {
+                    let cmd = SCREEN.lock().curr_command;
+                    crate::raw_write!(&cmd);
+                    SCREEN.lock().clear_command();
+                }
+                Input::Key(ch) => SCREEN.lock().write_byte(ch),
+                _ => (),
+            }
+        }
+        //}
+
+        PICS.lock().end(33);
     }
 }

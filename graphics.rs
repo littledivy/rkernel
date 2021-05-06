@@ -1,5 +1,6 @@
-use core::fmt;
 /// `rkernel::graphics::Screen` provides the high level API to draw on the 640x480 screen with 16 layers.
+use core::fmt;
+
 use vga::colors::Color16;
 use vga::colors::TextModeColor;
 use vga::vga::VGA;
@@ -77,12 +78,30 @@ impl Writer for StageWriter {
     }
 }
 
+struct MousePointer {
+    x: usize,
+    y: usize,
+    preserved: Option<ScreenCharacter>,
+}
+
+impl Default for MousePointer {
+    fn default() -> Self {
+        // Default coordinates must match with `crate::mouse::State` defaults.
+        Self {
+            x: 0,
+            y: 0,
+            preserved: None,
+        }
+    }
+}
+
 /// Uh, so this is the screen. Not literally
 pub struct Screen {
     pub mode: Text80x25,
     cmd: CommandWriter,
     pub curr_command: [u8; 310],
     stage: StageWriter,
+    pointer: MousePointer,
 }
 
 impl Screen {
@@ -101,6 +120,8 @@ impl Screen {
             mode,
             cmd: CommandWriter::init(),
             stage: StageWriter::init(),
+            pointer: Default::default(),
+            // Allocate memory for command storage
             curr_command: [0u8; 310],
         }
     }
@@ -151,5 +172,22 @@ impl Screen {
         self.mode.write_character(self.cmd.x, self.cmd.y, blch);
         self.cmd.dec();
         self.mode.set_cursor_position(self.cmd.x, self.cmd.y);
+    }
+
+    pub fn set_mouse(&mut self, x: usize, y: usize) {
+        let color = TextModeColor::new(Color16::Red, Color16::Red);
+        let blch = ScreenCharacter::new(b' ', color);
+
+        self.pointer.x = x;
+        self.pointer.y = y;
+        self.pointer.preserved = Some(self.mode.read_character(self.pointer.x, self.pointer.y));
+        self.mode.write_character(x, y, blch);
+    }
+
+    pub fn restore_pointer(&mut self) {
+        if let Some(character) = self.pointer.preserved {
+            self.mode
+                .write_character(self.pointer.x, self.pointer.y, character);
+        }
     }
 }
