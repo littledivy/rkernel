@@ -2,6 +2,16 @@
 #![no_main]
 #![feature(asm)]
 #![feature(abi_x86_interrupt)]
+#![feature(alloc_error_handler)]
+#![feature(core_intrinsics)]
+
+extern crate alloc;
+extern crate wee_alloc;
+
+use alloc::boxed::Box;
+// Use `wee_alloc` as the global allocator.
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use core::panic::PanicInfo;
 use lazy_static::lazy_static;
@@ -75,6 +85,7 @@ macro_rules! log {
 pub extern "C" fn _start(m_ptr: usize) -> ! {
     unsafe { BOOT_TICKS = rdtsc() };
     let boot_info = unsafe { load(m_ptr) };
+    let a = Box::new(10);
     log!(b"Enter _start\n");
     log!(b"TSC calibrated\n");
     mem::info(&boot_info);
@@ -92,4 +103,12 @@ fn panic(info: &PanicInfo) -> ! {
     raw_write!(b"kernel panic");
     // TODO: ACPI/APM shutdown or QEMU exit after few seconds.
     loop {}
+}
+
+#[alloc_error_handler]
+#[no_mangle]
+pub extern "C" fn oom(_: ::core::alloc::Layout) -> ! {
+    unsafe {
+        ::core::intrinsics::abort();
+    }
 }
