@@ -1,3 +1,6 @@
 [submodule "ps2-mouse"]
 	path = ps2-mouse
 	url = git@github.com:littledivy/ps2-mouse.git
+[submodule "ext2-rs"]
+	path = ext2-rs
+	url = git@github.com:littledivy/ext2-rs.git

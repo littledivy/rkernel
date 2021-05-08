@@ -17,6 +17,9 @@ ld -n --gc-sections -T linker.ld -o kernel.bin boot/boot.o boot/multiboot_header
 # mkdir -p build/boot/grub
 mv kernel.bin build/boot/kernel.bin
 # cp boot/grub.cfg boot/boot/grub/grub.cfg
-grub-mkrescue -o x86_64-rkernel.iso build/
 
-qemu-system-x86_64 -cdrom x86_64-rkernel.iso
+# dd if=/dev/zero of=harddisk.img bs=1M count=35
+# mformat -F -i harddisk.img
+
+grub-mkrescue -o x86_64-rkernel.iso build/
+qemu-system-x86_64 -drive file=harddisk.img,format=raw,media=disk -cdrom x86_64-rkernel.iso -boot d

@@ -153,7 +153,7 @@ p3_table:
 p2_table:
     resb 4096
 stack_bottom:
-    resb 4096 ; AHAHAHHA! When in doubt, increase this to whatever feels right
+    resb 25096 ; AHAHAHHA! When in doubt, increase this to whatever feels right
 stack_top:
 
 section .rodata

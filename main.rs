@@ -4,6 +4,8 @@
 #![feature(abi_x86_interrupt)]
 #![feature(alloc_error_handler)]
 #![feature(core_intrinsics)]
+#![feature(panic_info_message)]
+#![feature(step_trait_ext)]
 
 extern crate alloc;
 extern crate wee_alloc;
@@ -20,6 +22,7 @@ use spin::Mutex;
 use vga::colors::Color16;
 
 mod asm;
+mod ata;
 mod gdt;
 mod graphics;
 mod idt;
@@ -91,6 +94,7 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     mem::info(&boot_info);
     mouse::init();
     log!(b"Mouse enabled\n");
+    ata::init();
     idt::init();
     log!(b"Interrupts enabled\n");
     raw_write!(WELCOME);
@@ -100,7 +104,7 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    raw_write!(b"kernel panic");
+    raw_write!(alloc::format!("{}", info).as_bytes());
     // TODO: ACPI/APM shutdown or QEMU exit after few seconds.
     loop {}
 }
@@ -108,6 +112,7 @@ fn panic(info: &PanicInfo) -> ! {
 #[alloc_error_handler]
 #[no_mangle]
 pub extern "C" fn oom(_: ::core::alloc::Layout) -> ! {
+    raw_write!(b"OOM");
     unsafe {
         ::core::intrinsics::abort();
     }
