@@ -29,6 +29,7 @@ mod idt;
 mod keyboard;
 mod mem;
 mod mouse;
+mod pci;
 mod pic;
 mod rdtsc;
 mod rtc;
@@ -95,6 +96,7 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     mouse::init();
     log!(b"Mouse enabled\n");
     ata::init();
+    pci::init();
     idt::init();
     log!(b"Interrupts enabled\n");
     raw_write!(WELCOME);
