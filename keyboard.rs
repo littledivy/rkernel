@@ -43,7 +43,7 @@ pub extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: Interrupt
                 // Execute command
                 Input::Enter => {
                     let cmd = SCREEN.lock().curr_command;
-                    crate::raw_write!(&cmd);
+                    crate::raw_write!(b"[Enter]\n");
                     SCREEN.lock().clear_command();
                 }
                 Input::Key(ch) => SCREEN.lock().write_byte(ch),

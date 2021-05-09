@@ -126,12 +126,37 @@ impl Screen {
         }
     }
 
+    fn snapshot(&mut self, buf: &mut [[ScreenCharacter; 80]; 23]) {
+        for y in 0..23 {
+            for x in 0..80 {
+                buf[y][x] = self.mode.read_character(x, y);
+            }
+        }
+    }
+
     /// Writes to the stage.
     pub fn write(&mut self, buf: &[u8], fg: Color16) {
         for (offset, ch) in buf.iter().enumerate() {
             if ch == &0u8 {
                 continue;
             };
+            if self.stage.y > 22 {
+                self.stage.y = 22;
+                let color = TextModeColor::new(Color16::Black, Color16::Black);
+                let blch = ScreenCharacter::new(b' ', color);
+
+                let mut snapshot_buf = [[blch; 80]; 23];
+                self.snapshot(&mut snapshot_buf);
+
+                let (_, x) = snapshot_buf.split_at(1);
+                for (i, y) in x.iter().enumerate() {
+                    for (x, ch) in y.iter().enumerate() {
+                        self.mode.write_character(x, i, *ch);
+                    }
+                }
+
+                self.stage.x = 0;
+            }
             if ch == &b'\n' {
                 self.stage.x = 0;
                 self.stage.y += 1;

@@ -99,7 +99,9 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     pci::init();
     idt::init();
     log!(b"Interrupts enabled\n");
+
     raw_write!(WELCOME);
+
     // TODO: use `hlt` instruction
     loop {}
 }
