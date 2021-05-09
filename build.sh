@@ -22,4 +22,4 @@ mv kernel.bin build/boot/kernel.bin
 # mformat -F -i harddisk.img
 
 grub-mkrescue -o x86_64-rkernel.iso build/
-qemu-system-x86_64 -drive file=harddisk.img,format=raw,media=disk -cdrom x86_64-rkernel.iso -boot d
+qemu-system-x86_64 -drive file=harddisk.img,format=raw,media=disk -cdrom x86_64-rkernel.iso -boot d -soundhw pcspk

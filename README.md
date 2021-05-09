@@ -14,7 +14,9 @@ A minimal x86_64 Rust OS kernel.
 - [x] [RTC](https://wiki.osdev.org/RTC)
 - [x] [Allocator](https://wiki.osdev.org/Memory_Allocation)
 - [x] [ATA PIO](https://wiki.osdev.org/ATA_PIO_Mode) (In progress...)
-- [ ] Audio driver: Soundblaster 16 
+- [x] [PCI](https://wiki.osdev.org/PCI)
+- [x] [PC Speaker](https://wiki.osdev.org/PC_Speaker)
+- [ ] Audio driver: Soundblaster 16
 - [ ] Network: RTL8139
 - [ ] ACPI/APM
 - [ ] Testing

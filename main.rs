@@ -31,6 +31,7 @@ mod mem;
 mod mouse;
 mod pci;
 mod pic;
+mod pspeaker;
 mod rdtsc;
 mod rtc;
 
@@ -99,7 +100,7 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     pci::init();
     idt::init();
     log!(b"Interrupts enabled\n");
-
+    unsafe { pspeaker::beep(1000) };
     raw_write!(WELCOME);
 
     // TODO: use `hlt` instruction
