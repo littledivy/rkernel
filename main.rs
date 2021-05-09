@@ -99,6 +99,7 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     ata::init();
     pci::init();
     idt::init();
+    rtc::time();
     log!(b"Interrupts enabled\n");
     unsafe { pspeaker::beep(1000) };
     raw_write!(WELCOME);
