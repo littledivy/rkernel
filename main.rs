@@ -101,8 +101,13 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     idt::init();
     rtc::time();
     log!(b"Interrupts enabled\n");
-    unsafe { pspeaker::beep(1000) };
+
     raw_write!(WELCOME);
+
+    // Play the 3rd Octave :D
+    for note in 0..7 {
+        pspeaker::play_note(3, note);
+    }
 
     // TODO: use `hlt` instruction
     loop {}
