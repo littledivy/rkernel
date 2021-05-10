@@ -1,9 +1,9 @@
 use x86_64::instructions::port::Port;
 use x86_64::instructions::port::PortRead;
-use x86_64::instructions::port::PortWrite;
+use x86_64::instructions::port::PortReadOnly;
 
 pub struct SoundBlaster {
-    read_port: PortRead<u8>,
+    read_port: PortReadOnly<u8>,
     write_port: Port<u8>,
     reset_port: Port<u8>,
 }
@@ -11,7 +11,7 @@ pub struct SoundBlaster {
 impl SoundBlaster {
     pub fn new() -> Self {
         Self {
-            read_port: PortRead::new(0x22A),
+            read_port: PortReadOnly::new(0x22A),
             write_port: Port::new(0x22C),
             reset_port: Port::new(0x226),
         }
@@ -25,7 +25,7 @@ impl SoundBlaster {
         (self.read_port.read(), self.read_port.read())
     }
 
-    unsafe fn reset(&mut self) -> bool {
+    pub unsafe fn reset(&mut self) -> bool {
         self.reset_port.write(1);
         self.reset_port.write(0);
 

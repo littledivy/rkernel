@@ -34,6 +34,7 @@ mod pic;
 mod pspeaker;
 mod rdtsc;
 mod rtc;
+mod sb16;
 
 use asm::*;
 use graphics::Screen;
@@ -108,7 +109,12 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     for note in 0..7 {
         pspeaker::play_note(3, note);
     }
-
+    let mut sb = sb16::SoundBlaster::new();
+    unsafe {
+        sb.reset();
+        let (v_major, v_minor) = sb.init();
+        log!(alloc::format!("SB16: {} {}", v_major, v_minor).as_bytes());
+    }
     // TODO: use `hlt` instruction
     loop {}
 }
