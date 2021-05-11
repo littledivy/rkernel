@@ -99,22 +99,18 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     log!(b"Mouse enabled\n");
     ata::init();
     pci::init();
+
     idt::init();
     rtc::time();
     log!(b"Interrupts enabled\n");
-
-    raw_write!(WELCOME);
-
     // Play the 3rd Octave :D
     for note in 0..7 {
         pspeaker::play_note(3, note);
     }
-    let mut sb = sb16::SoundBlaster::new();
-    unsafe {
-        sb.reset();
-        let (v_major, v_minor) = sb.init();
-        log!(alloc::format!("SB16: {} {}", v_major, v_minor).as_bytes());
-    }
+    raw_write!(WELCOME);
+    let (v_major, v_minor) = sb16::init();
+    log!(alloc::format!("SB16: {} {}\n", v_major, v_minor).as_bytes());
+
     // TODO: use `hlt` instruction
     loop {}
 }

@@ -19,6 +19,8 @@ lazy_static! {
         idt[32].set_handler_fn(timer_interrupt_handler);
         // PS/2 Keyboard
         idt[32 + 1].set_handler_fn(crate::keyboard::keyboard_interrupt_handler);
+        // Sound card
+        idt[32 + 5].set_handler_fn(crate::sb16::sound_interrupt_handler);
          // PS/2 Mouse
         idt[32 + 12].set_handler_fn(crate::mouse::mouse_interrupt_handler);
         idt
