@@ -64,7 +64,7 @@ impl SoundBlaster {
 
         write_to_port(0x224, 0x80);
         write_to_port(0x225, 0b10);
-        self.transfer(BUF as *const u8, 882);
+        // self.transfer(BUF as *const u8, 882);
         version
     }
 

@@ -23,6 +23,8 @@ use vga::colors::Color16;
 
 mod asm;
 mod ata;
+mod cpuid;
+mod fpu;
 mod gdt;
 mod graphics;
 mod idt;
@@ -95,19 +97,24 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     log!(b"Enter _start\n");
     log!(b"TSC calibrated\n");
     mem::info(&boot_info);
+    cpuid::init();
     mouse::init();
     log!(b"Mouse enabled\n");
     ata::init();
     pci::init();
-
+    // FIXME: FPU initalization sometimes crashes.
+    // fpu::init();
     idt::init();
     rtc::time();
     log!(b"Interrupts enabled\n");
+
     // Play the 3rd Octave :D
-    for note in 0..7 {
-        pspeaker::play_note(3, note);
-    }
+    // for note in 0..7 {
+    //    pspeaker::play_note(3, note);
+    // }
+
     raw_write!(WELCOME);
+
     let (v_major, v_minor) = sb16::init();
     log!(alloc::format!("SB16: {} {}\n", v_major, v_minor).as_bytes());
 
