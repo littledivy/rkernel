@@ -67,25 +67,25 @@ static WELCOME: &[u8] = br#" ____________________
 #[macro_export]
 macro_rules! raw_write {
     ($m: expr) => {
-        crate::SCREEN.lock().write($m, vga::colors::Color16::White);
+                // crate::SCREEN.lock().write($m, vga::colors::Color16::White);
     };
 }
 
 #[macro_export]
 macro_rules! log {
     ($msg: expr) => {
-        crate::raw_write!(b"[");
-        let dt = crate::rdtsc::delta_ns(unsafe { crate::BOOT_TICKS });
-        let mut buffer = ryu::Buffer::new();
-        let printable = buffer.format(dt);
-        crate::SCREEN
-            .lock()
-            .write(&printable.as_bytes(), vga::colors::Color16::LightGreen);
-        crate::SCREEN
-            .lock()
-            .write(b"ns", vga::colors::Color16::LightGreen);
-        crate::raw_write!(b"] ");
-        crate::raw_write!($msg);
+        // crate::raw_write!(b"[");
+        //         let dt = crate::rdtsc::delta_ns(unsafe { crate::BOOT_TICKS });
+        //         let mut buffer = ryu::Buffer::new();
+        //         let printable = buffer.format(dt);
+        //         crate::SCREEN
+        //              .lock()
+        //              .write(&printable.as_bytes(), vga::colors::Color16::LightGreen);
+        //          crate::SCREEN
+        //              .lock()
+        //              .write(b"ns", vga::colors::Color16::LightGreen);
+        //          crate::raw_write!(b"] ");
+        //          crate::raw_write!($msg);
     };
 }
 
@@ -93,10 +93,11 @@ macro_rules! log {
 pub extern "C" fn _start(m_ptr: usize) -> ! {
     unsafe { BOOT_TICKS = rdtsc() };
     let boot_info = unsafe { load(m_ptr) };
-    let a = Box::new(10);
+    
     log!(b"Enter _start\n");
     log!(b"TSC calibrated\n");
-    mem::info(&boot_info);
+    mem::info(boot_info);
+    
     cpuid::init();
     mouse::init();
     log!(b"Mouse enabled\n");
@@ -109,9 +110,9 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
     log!(b"Interrupts enabled\n");
 
     // Play the 3rd Octave :D
-    // for note in 0..7 {
-    //    pspeaker::play_note(3, note);
-    // }
+     for note in 0..7 {
+        pspeaker::play_note(3, note);
+     }
 
     raw_write!(WELCOME);
 
@@ -124,6 +125,7 @@ pub extern "C" fn _start(m_ptr: usize) -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+    pspeaker::play_note(3, 1);
     raw_write!(alloc::format!("{}", info).as_bytes());
     // TODO: ACPI/APM shutdown or QEMU exit after few seconds.
     loop {}

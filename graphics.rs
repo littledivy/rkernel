@@ -6,6 +6,41 @@ use vga::colors::TextModeColor;
 use vga::vga::VGA;
 use vga::writers::{ScreenCharacter, Text80x25, TextWriter};
 
+pub struct Video1024x768x32 {
+  // framebuffer: &'static mut [u32],
+  framebuffer: u32,
+  pitch: usize,
+  width: usize,
+  height: usize,
+  bpp: usize
+}
+
+impl Video1024x768x32 {
+  pub unsafe fn set_framebuffer(vbe_info: multiboot2::VBEModeInfo) -> Self {
+    let width = vbe_info.resolution.0 as usize;
+    let height = vbe_info.resolution.1 as usize;
+    Self { 
+      // framebuffer: core::slice::from_raw_parts_mut(vbe_info.framebuffer_base_ptr as *mut u32, width * height),
+      framebuffer: vbe_info.framebuffer_base_ptr,
+      pitch: vbe_info.pitch as usize,
+      bpp: vbe_info.bpp as usize,
+      width,
+      height,
+    }
+  }
+  
+  pub fn write_pixel(&mut self, x: usize, y: usize, character: char, color: u32) {
+    // let offset = y * self.pitch + (x * ( self.bpp / 8 )) + self.framebuffer as usize;
+    // unsafe { *(offset as *mut u32) = 0; }
+    unsafe {
+      let pos = x * 4 + y * 3200;
+      // let mut screen = core::slice::from_raw_parts_mut(self.framebuffer as *mut u8, self.width * self.height);
+      // screen[10] = character as u8;
+    }
+  }
+
+}
+
 trait Writer {
     fn inc(&mut self) {}
     fn dec(&mut self) {}
@@ -107,6 +142,7 @@ pub struct Screen {
 impl Screen {
     /// Creates a new screen on top of the 640x480x16 VGA Graphics writer.
     pub fn new() -> Self {
+        
         let mode = Text80x25::new();
         mode.set_mode();
         mode.clear_screen();

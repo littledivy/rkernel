@@ -1,7 +1,7 @@
 TARGET=.cargo/x86_64-kernel.json
 BOOT_SOURCE=(multiboot_header long_mode_start boot)
 set -e
-cargo build --target $TARGET
+cargo build --offline --target $TARGET
 
 BOOT_OUT=()
 
@@ -22,4 +22,4 @@ mv kernel.bin build/boot/kernel.bin
 # mformat -F -i harddisk.img
 
 grub-mkrescue -o x86_64-rkernel.iso build/
-qemu-system-x86_64 -drive file=harddisk.img,format=raw,media=disk -cdrom x86_64-rkernel.iso -boot d -soundhw pcspk -device sb16
+qemu-system-x86_64 -drive file=harddisk.img,format=raw,media=disk -cdrom x86_64-rkernel.iso -boot d -soundhw pcspk -device sb16 
