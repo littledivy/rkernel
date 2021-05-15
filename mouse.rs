@@ -45,11 +45,11 @@ fn on_complete(mouse_state: MouseState) {
     if state.1.is_negative() {
         state.1 = 0;
     }
-    if state.0 >= 80 {
-        state.0 = 80;
+    if state.0 >= 640 {
+        state.0 = 640;
     }
-    if state.1 >= 25 {
-        state.1 = 25;
+    if state.1 >= 480 {
+        state.1 = 480;
     }
     SCREEN.lock().restore_pointer();
     SCREEN.lock().set_mouse(state.0 as usize, state.1 as usize);

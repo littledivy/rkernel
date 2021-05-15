@@ -3,7 +3,9 @@ use core::fmt;
 
 use vga::colors::Color16;
 use vga::colors::TextModeColor;
+use vga::registers::PlaneMask;
 use vga::vga::VGA;
+use vga::writers::{Graphics640x480x16, GraphicsWriter};
 use vga::writers::{ScreenCharacter, Text80x25, TextWriter};
 
 trait Writer {
@@ -19,27 +21,29 @@ struct CommandWriter {
     pub y: usize,
 }
 
-static CommandY: usize = 25 - 1;
+static CommandY: usize = 480 - 16;
+
+pub static FONT: &'static [u8] = include_bytes!("unifont.font");
 
 impl CommandWriter {
     fn init() -> Self {
-        Self { x: 1, y: CommandY }
+        Self { x: 8, y: CommandY }
     }
 }
 
 impl Writer for CommandWriter {
     fn inc(&mut self) {
-        self.x += 1;
-        if self.x > 80 {
-            self.x = 1;
+        self.x += 8;
+        if self.x > 640 {
+            self.x = 8;
         }
     }
 
     fn dec(&mut self) {
-        if self.x <= 1 {
-            self.x = 1;
+        if self.x <= 8 {
+            self.x = 8;
         } else {
-            self.x -= 1;
+            self.x -= 8;
         }
     }
 }
@@ -57,10 +61,10 @@ impl StageWriter {
 
 impl Writer for StageWriter {
     fn inc(&mut self) {
-        self.x += 1;
-        if self.x > 80 {
+        self.x += 8;
+        if self.x > 640 {
             self.x = 0;
-            self.y += 1;
+            self.y += 16;
         }
     }
 
@@ -70,34 +74,36 @@ impl Writer for StageWriter {
             if self.y < 1 {
                 self.y = 1;
             } else {
-                self.y -= 1;
+                self.y -= 16;
             }
         } else {
-            self.x -= 1;
+            self.x -= 16;
         }
     }
 }
 
-struct MousePointer {
+struct Point {
     x: usize,
     y: usize,
-    preserved: Option<ScreenCharacter>,
+}
+
+struct MousePointer {
+    loc: Point,
+    preserved: Option<Color16>,
 }
 
 impl Default for MousePointer {
     fn default() -> Self {
         // Default coordinates must match with `crate::mouse::State` defaults.
         Self {
-            x: 0,
-            y: 0,
+            loc: Point { x: 0, y: 0 },
             preserved: None,
         }
     }
 }
 
-/// Uh, so this is the screen. Not literally
 pub struct Screen {
-    pub mode: Text80x25,
+    pub mode: Graphics640x480x16,
     cmd: CommandWriter,
     pub curr_command: [u8; 310],
     stage: StageWriter,
@@ -107,31 +113,19 @@ pub struct Screen {
 impl Screen {
     /// Creates a new screen on top of the 640x480x16 VGA Graphics writer.
     pub fn new() -> Self {
-        let mode = Text80x25::new();
+        let mode = Graphics640x480x16::new();
         mode.set_mode();
-        mode.clear_screen();
-        let color = TextModeColor::new(Color16::White, Color16::Black);
-        let marker = ScreenCharacter::new(b'_', color);
-        for i in 0..80 {
-            mode.write_character(i, 25 - 2, marker);
-        }
-        mode.write_character(0, 25 - 1, ScreenCharacter::new(b'>', color));
-        Self {
+        mode.clear_screen(Color16::Black);
+
+        let mut screen = Self {
             mode,
             cmd: CommandWriter::init(),
             stage: StageWriter::init(),
             pointer: Default::default(),
             // Allocate memory for command storage
             curr_command: [0u8; 310],
-        }
-    }
-
-    fn snapshot(&mut self, buf: &mut [[ScreenCharacter; 80]; 23]) {
-        for y in 0..23 {
-            for x in 0..80 {
-                buf[y][x] = self.mode.read_character(x, y);
-            }
-        }
+        };
+        screen
     }
 
     /// Writes to the stage.
@@ -140,43 +134,33 @@ impl Screen {
             if ch == &0u8 {
                 continue;
             };
-            if self.stage.y > 22 {
-                self.stage.y = 22;
-                let color = TextModeColor::new(Color16::Black, Color16::Black);
-                let blch = ScreenCharacter::new(b' ', color);
-
-                let mut snapshot_buf = [[blch; 80]; 23];
-                self.snapshot(&mut snapshot_buf);
-
-                let (_, x) = snapshot_buf.split_at(1);
-                for (i, y) in x.iter().enumerate() {
-                    for (x, ch) in y.iter().enumerate() {
-                        self.mode.write_character(x, i, *ch);
-                    }
-                }
-
-                self.stage.x = 0;
-            }
             if ch == &b'\n' {
                 self.stage.x = 0;
-                self.stage.y += 1;
+                self.stage.y += 16;
             } else {
-                let color = TextModeColor::new(fg, Color16::Black);
-                let screen_character = ScreenCharacter::new(*ch, color);
-                self.mode
-                    .write_character(self.stage.x, self.stage.y, screen_character);
+                self.draw_character(self.stage.x, self.stage.y, *ch as char, fg);
                 self.stage.inc();
+            }
+        }
+    }
+
+    pub fn draw_character(&mut self, x: usize, y: usize, ch: char, color: Color16) {
+        let font_i = 16 * (ch as usize);
+        if font_i + 16 <= FONT.len() {
+            for row in 0..16 {
+                let row_data = FONT[font_i + row];
+                for col in 0..8 {
+                    if (row_data >> (7 - col)) & 1 == 1 {
+                        self.mode.set_pixel(x + col, y + row, color);
+                    }
+                }
             }
         }
     }
 
     /// Writes to the command input.
     pub fn write_byte(&mut self, ch: u8) {
-        let color = TextModeColor::new(Color16::Yellow, Color16::Black);
-        let screen_character = ScreenCharacter::new(ch, color);
-        self.mode.set_cursor_position(self.cmd.x, self.cmd.y);
-        self.mode
-            .write_character(self.cmd.x, self.cmd.y, screen_character);
+        self.draw_character(self.cmd.x, self.cmd.y, ch as char, Color16::White);
         self.curr_command[self.cmd.x] = ch;
         self.cmd.inc();
     }
@@ -192,27 +176,22 @@ impl Screen {
 
     /// Resets the previous 8x8 character from R to L of the command input.
     pub fn pop(&mut self) {
-        let color = TextModeColor::new(Color16::Black, Color16::Black);
-        let blch = ScreenCharacter::new(b' ', color);
-        self.mode.write_character(self.cmd.x, self.cmd.y, blch);
+        self.mode
+            .draw_character(self.cmd.x, self.cmd.y, ' ', Color16::Black);
         self.cmd.dec();
-        self.mode.set_cursor_position(self.cmd.x, self.cmd.y);
     }
 
     pub fn set_mouse(&mut self, x: usize, y: usize) {
-        let color = TextModeColor::new(Color16::Red, Color16::Red);
-        let blch = ScreenCharacter::new(b' ', color);
+        self.pointer.loc.x = x;
+        self.pointer.loc.y = y;
 
-        self.pointer.x = x;
-        self.pointer.y = y;
-        self.pointer.preserved = Some(self.mode.read_character(self.pointer.x, self.pointer.y));
-        self.mode.write_character(x, y, blch);
+        self.mode.set_pixel(x, y, Color16::LightRed);
     }
 
     pub fn restore_pointer(&mut self) {
         if let Some(character) = self.pointer.preserved {
             self.mode
-                .write_character(self.pointer.x, self.pointer.y, character);
+                .set_pixel(self.pointer.loc.x, self.pointer.loc.y, character);
         }
     }
 }

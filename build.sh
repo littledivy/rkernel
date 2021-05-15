@@ -1,7 +1,7 @@
 TARGET=.cargo/x86_64-kernel.json
 BOOT_SOURCE=(multiboot_header long_mode_start boot)
 set -e
-cargo build --target $TARGET
+cargo build --target $TARGET --offline
 
 BOOT_OUT=()
 
