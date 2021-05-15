@@ -1,5 +1,4 @@
 #![no_std]
-#![no_main]
 #![feature(asm)]
 #![feature(abi_x86_interrupt)]
 #![feature(alloc_error_handler)]
@@ -75,7 +74,9 @@ macro_rules! raw_write {
 macro_rules! log {
     ($msg: expr) => {
         crate::raw_write!(b"[");
-        let dt = crate::rdtsc::delta_ns(unsafe { crate::BOOT_TICKS });
+        #[allow(unused_unsafe)]
+        let boot_t = unsafe { crate::BOOT_TICKS };
+        let dt = crate::rdtsc::delta_ns(boot_t);
         let mut buffer = ryu::Buffer::new();
         let printable = buffer.format(dt);
         crate::SCREEN
@@ -93,7 +94,6 @@ macro_rules! log {
 pub extern "C" fn _start(m_ptr: usize) -> ! {
     unsafe { BOOT_TICKS = rdtsc() };
     let boot_info = unsafe { load(m_ptr) };
-    let a = Box::new(10);
     log!(b"Enter _start\n");
     log!(b"TSC calibrated\n");
     mem::info(&boot_info);
@@ -131,6 +131,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 #[alloc_error_handler]
 #[no_mangle]
+#[allow(improper_ctypes_definitions)]
 pub extern "C" fn oom(_: ::core::alloc::Layout) -> ! {
     raw_write!(b"OOM");
     unsafe {

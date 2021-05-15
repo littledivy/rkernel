@@ -17,7 +17,7 @@ lazy_static! {
 }
 
 pub fn init() {
-    MOUSE.lock().init();
+    MOUSE.lock().init().expect("Mouse init failed.");
     MOUSE.lock().set_on_complete(on_complete);
 
     // Old code. Essentially the same as `ps2_mouse::Mouse::init()`

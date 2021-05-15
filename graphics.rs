@@ -1,12 +1,8 @@
-/// `rkernel::graphics::Screen` provides the high level API to draw on the 640x480 screen with 16 layers.
 use core::fmt;
 
 use vga::colors::Color16;
-use vga::colors::TextModeColor;
-use vga::registers::PlaneMask;
-use vga::vga::VGA;
-use vga::writers::{Graphics640x480x16, GraphicsWriter};
-use vga::writers::{ScreenCharacter, Text80x25, TextWriter};
+use vga::writers::Graphics640x480x16;
+use vga::writers::GraphicsWriter;
 
 trait Writer {
     fn inc(&mut self) {}
@@ -14,20 +10,20 @@ trait Writer {
 }
 
 struct CommandWriter {
-    /// Only dynamic value of the command input.
     pub x: usize,
-    /// Y remains constant at `WBOUNDARY - 10`.
-    /// We refer this when drawing to screen.
     pub y: usize,
 }
 
-static CommandY: usize = 480 - 16;
+static COMMAND_Y: usize = 480 - 16;
 
 pub static FONT: &'static [u8] = include_bytes!("unifont.font");
 
 impl CommandWriter {
     fn init() -> Self {
-        Self { x: 8, y: CommandY }
+        Self {
+            x: 16,
+            y: COMMAND_Y,
+        }
     }
 }
 
@@ -62,14 +58,14 @@ impl StageWriter {
 impl Writer for StageWriter {
     fn inc(&mut self) {
         self.x += 8;
-        if self.x > 640 {
+        if self.x >= 640 {
             self.x = 0;
             self.y += 16;
         }
     }
 
     fn dec(&mut self) {
-        if self.x < 0 {
+        if self.x == 0 {
             self.x = 0;
             if self.y < 1 {
                 self.y = 1;
@@ -111,7 +107,6 @@ pub struct Screen {
 }
 
 impl Screen {
-    /// Creates a new screen on top of the 640x480x16 VGA Graphics writer.
     pub fn new() -> Self {
         let mode = Graphics640x480x16::new();
         mode.set_mode();
@@ -122,18 +117,21 @@ impl Screen {
             cmd: CommandWriter::init(),
             stage: StageWriter::init(),
             pointer: Default::default(),
-            // Allocate memory for command storage
             curr_command: [0u8; 310],
         };
+        screen.draw_character(0, COMMAND_Y, '~', Color16::Pink);
         screen
     }
 
-    /// Writes to the stage.
     pub fn write(&mut self, buf: &[u8], fg: Color16) {
         for (offset, ch) in buf.iter().enumerate() {
             if ch == &0u8 {
                 continue;
             };
+            if self.stage.y >= COMMAND_Y - 16 {
+                // ;)
+                *self = Screen::new();
+            }
             if ch == &b'\n' {
                 self.stage.x = 0;
                 self.stage.y += 16;
@@ -158,27 +156,28 @@ impl Screen {
         }
     }
 
-    /// Writes to the command input.
     pub fn write_byte(&mut self, ch: u8) {
         self.draw_character(self.cmd.x, self.cmd.y, ch as char, Color16::White);
         self.curr_command[self.cmd.x] = ch;
         self.cmd.inc();
     }
 
-    /// Resets the command.
     pub fn clear_command(&mut self) {
-        while self.cmd.x != 1 {
+        while self.cmd.x != 8 {
             self.pop();
         }
         self.pop();
         self.curr_command = [0u8; 310];
     }
 
-    /// Resets the previous 8x8 character from R to L of the command input.
     pub fn pop(&mut self) {
-        self.mode
-            .draw_character(self.cmd.x, self.cmd.y, ' ', Color16::Black);
         self.cmd.dec();
+        for row in 0..16 {
+            for col in 0..8 {
+                self.mode
+                    .set_pixel(self.cmd.x + col, self.cmd.y + row, Color16::Black);
+            }
+        }
     }
 
     pub fn set_mouse(&mut self, x: usize, y: usize) {
