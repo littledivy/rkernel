@@ -16,7 +16,7 @@ lazy_static! {
     pub static ref SB16: Mutex<SoundBlaster> = Mutex::new(SoundBlaster::new());
 }
 
-static mut BUF: &[u8; 882] = &[32; 882];
+static mut BUF: &[u8; 882] = &[55; 882];
 
 pub fn init() -> (u8, u8) {
     unsafe {

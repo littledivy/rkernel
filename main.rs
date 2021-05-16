@@ -36,6 +36,7 @@ mod pspeaker;
 mod rdtsc;
 mod rtc;
 mod sb16;
+mod serial;
 
 use asm::*;
 use graphics::Screen;

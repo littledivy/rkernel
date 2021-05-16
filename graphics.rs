@@ -90,7 +90,6 @@ struct MousePointer {
 
 impl Default for MousePointer {
     fn default() -> Self {
-        // Default coordinates must match with `crate::mouse::State` defaults.
         Self {
             loc: Point { x: 0, y: 0 },
             preserved: None,
@@ -181,9 +180,23 @@ impl Screen {
     }
 
     pub fn set_mouse(&mut self, x: usize, y: usize) {
+        let framebuffer = self.mode.get_frame_buffer();
+
+        let offset = x / 8 + y * (640 / 8);
+        let pixel_mask = 0x80 >> (x & 0x07);
+        vga::vga::VGA
+            .lock()
+            .graphics_controller_registers
+            .set_bit_mask(pixel_mask);
+
+        let pixel = unsafe { framebuffer.add(offset).read_volatile() };
+        if pixel != 0x0 {
+            return;
+        }
         self.pointer.loc.x = x;
         self.pointer.loc.y = y;
 
+        self.pointer.preserved = Some(Color16::Black);
         self.mode.set_pixel(x, y, Color16::LightRed);
     }
 
