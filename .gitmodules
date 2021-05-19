@@ -4,3 +4,6 @@
 [submodule "ext2-rs"]
 	path = ext2-rs
 	url = git@github.com:littledivy/ext2-rs.git
+[submodule "vga"]
+	path = vga
+	url = https://github.com/ethindp/vga

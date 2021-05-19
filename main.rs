@@ -7,12 +7,13 @@
 #![feature(step_trait_ext)]
 
 extern crate alloc;
-extern crate wee_alloc;
 
 use alloc::boxed::Box;
-// Use `wee_alloc` as the global allocator.
+use static_alloc::Bump;
+
+// Use `static_alloc` as the global allocator.
 #[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+static ALLOC: Bump<[u8; 33554432]> = Bump::uninit();
 
 use core::panic::PanicInfo;
 use lazy_static::lazy_static;
