@@ -1,9 +1,9 @@
 [submodule "ps2-mouse"]
-	path = ps2-mouse
+	path = amd64/ps2-mouse
 	url = git@github.com:littledivy/ps2-mouse.git
 [submodule "ext2-rs"]
-	path = ext2-rs
+	path = amd64/ext2-rs
 	url = git@github.com:littledivy/ext2-rs.git
 [submodule "vga"]
-	path = vga
+	path = amd64/vga
 	url = https://github.com/ethindp/vga
