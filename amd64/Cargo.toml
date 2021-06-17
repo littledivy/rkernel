@@ -3,6 +3,9 @@ name = "rust-kernel"
 version = "0.1.0"
 edition = "2018"
 
+[build]
+target = "../.cargo/x86_64-kernel.json"
+
 [dependencies]
 # vga = "0.2.6"
 # Build fails on latest rustc nightly
