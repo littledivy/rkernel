@@ -2,7 +2,8 @@
 
 A minimal x86_64 Rust OS kernel.
 
-[![](http://img.youtube.com/vi/OWmHbMYCQi8/0.jpg)](http://www.youtube.com/watch?v=OWmHbMYCQi8 "rkernel")
+
+https://user-images.githubusercontent.com/34997667/126076271-8ee2c02b-d25a-482d-ba78-32a1c788d5e0.mp4
 
 - [x] [Multiboot2](https://wiki.osdev.org/Multiboot)
 - [x] [VGA driver](https://wiki.osdev.org/VGA_Hardware)
