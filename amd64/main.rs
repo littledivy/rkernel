@@ -4,7 +4,6 @@
 #![feature(alloc_error_handler)]
 #![feature(core_intrinsics)]
 #![feature(panic_info_message)]
-#![feature(step_trait_ext)]
 
 extern crate alloc;
 

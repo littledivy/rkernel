@@ -14,8 +14,10 @@ done
 ld -n --gc-sections -T amd64/linker.ld -o kernel.bin amd64/boot/boot.o amd64/boot/multiboot_header.o amd64/boot/long_mode_start.o target/x86_64-kernel/debug/librust_kernel.a 
 # rm -rf build/
 # mkdir -p build/boot/grub
+
 mv kernel.bin build/boot/kernel.bin
-# cp boot/grub.cfg boot/boot/grub/grub.cfg
+
+# cp amd64/boot/grub.cfg amd64/boot/grub.cfg
 
 # dd if=/dev/zero of=harddisk.img bs=1M count=35
 # mformat -F -i harddisk.img
